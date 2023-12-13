@@ -43,13 +43,37 @@ public class EmployeeTaskRelationController {
 		return output[0];
 	}
 	
+	private String printOneRelation(Task task) {
+		String[] output = {""};
+		
+		output[0] += "Task ID: " + task.getId()
+		+ ", Task Name: " + task.getName()
+		+ ", Assigned Employees: [";
+		task.getAssignedEmployees().forEach(employee -> {
+			output[0] += "(Employee ID: " + employee.getId()
+			+ ", Employee Name: " + employee.getName() + ")";
+		});
+		output[0] += "]\n";
+		
+		return output[0];
+	}
+	
 	private boolean checkForRelation(Task task, Employee employee) {
 		return (task.checkAssignment(employee) && employee.checkAssignment(task));
 	}
 	
-	@GetMapping("")
+	@GetMapping("/allRelations")
 	public ResponseEntity<String> getAllRelations() {
 		return ResponseEntity.ok(printAllRelations());
+	}
+	
+	@GetMapping("/oneRelation")
+	public ResponseEntity<String> getOneRelation(@RequestParam("taskId") Integer taskId) {
+		Task task = taskRepository.findById(taskId).orElse(null);
+		if (task == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No task found for id: " + taskId);
+		}
+		return ResponseEntity.ok(printOneRelation(task));
 	}
 	
 	@PutMapping("")
