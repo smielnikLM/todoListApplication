@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.task;
 
 import org.springframework.data.repository.CrudRepository;
 
