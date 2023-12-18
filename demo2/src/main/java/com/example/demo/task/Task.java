@@ -43,18 +43,22 @@ public class Task {
 	
 	private Integer parentId;
 	
-	public Task(String name, String description) {
+	private Integer projectId;
+	
+	public Task(String name, String description, Integer projectId) {
 		this.name = name;
 		this.description = description;
 		this.status = StatusValues.NEW;
+		this.projectId = projectId;
 	}
 	
-	public Task(Integer id, String name, String description, StatusValues status, List<Employee> assignedEmployees) {
+	public Task(Integer id, String name, String description, StatusValues status, List<Employee> assignedEmployees, Integer projectId) {
 		this.id = id;
 		this.name = name;
 		this.description = description;
 		this.status = status;
 		this.assignedEmployees = assignedEmployees;
+		this.projectId = projectId;
 	}
 	
 	public void assignEmployee(Employee employee) {

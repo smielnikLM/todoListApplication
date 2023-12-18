@@ -2,6 +2,7 @@ package com.example.demo.employee;
 
 import java.util.List;
 
+import com.example.demo.project.Project;
 import com.example.demo.task.Task;
 
 import jakarta.persistence.Entity;
@@ -20,15 +21,21 @@ import lombok.NoArgsConstructor;
 public class Employee {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Integer id;
+	private Integer id;
 	
-	String name;
+	private String name;
 	
 	@ManyToMany
 	@JoinTable(name = "employee_task",
-			joinColumns = @JoinColumn(name = "task_id", referencedColumnName = "id"),
-			inverseJoinColumns = @JoinColumn(name = "employee_id", referencedColumnName = "id"))
-	List<Task> assignedTasks;
+			joinColumns = @JoinColumn(name = "employee_id", referencedColumnName = "id"),
+			inverseJoinColumns = @JoinColumn(name = "task_id", referencedColumnName = "id"))
+	private List<Task> assignedTasks;
+	
+	@ManyToMany
+	@JoinTable(name = "employee_project",
+			joinColumns = @JoinColumn(name = "employee_id", referencedColumnName = "id"),
+			inverseJoinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"))
+	private List<Project> assignedProjects;
 	
 	public Employee(String name) {
 		this.name = name;
@@ -43,11 +50,23 @@ public class Employee {
 		assignedTasks.add(task);
 	}
 	
-	public void removeAssignment(Task task) {
+	public void removeTaskAssignment(Task task) {
 		assignedTasks.remove(task);
 	}
 	
-	public boolean checkAssignment(Task task) {
+	public boolean checkTaskAssignment(Task task) {
 		return assignedTasks.contains(task);
+	}
+	
+	public void assignProject(Project project) {
+		assignedProjects.add(project);
+	}
+	
+	public void removeProjectAssignement(Project project) {
+		assignedProjects.remove(project);
+	}
+	
+	public boolean checkProjectAssignement(Project project) {
+		return assignedProjects.contains(project);
 	}
 }
