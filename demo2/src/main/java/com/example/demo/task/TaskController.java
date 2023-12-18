@@ -1,9 +1,12 @@
 package com.example.demo.task;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +25,9 @@ import com.example.demo.employee.EmployeeRepository;
 public class TaskController {
 	private final TaskRepository taskRepository;
 	
+	@Value("${tasks.allowedTreeLevel}")
+	private int allowedTreeLevel;
+	
 	public TaskController(TaskRepository taskRepository) {
 		this.taskRepository = taskRepository;
 	}
@@ -32,7 +38,13 @@ public class TaskController {
 			output[0] += "Task ID: " + task.getId()
 					+ ", Task Name: " + task.getName()
 					+ ", Task Description: " + task.getDescription()
-					+ ", Task Status: " + task.getStatus() + "\n";
+					+ ", Task Status: " + task.getStatus();
+			if (!task.isRoot()) {
+				output[0] += ", Parent Task ID: " + task.getParentId();				
+			} else {
+				output[0] += ", Task is root";
+			}
+			output[0] += "\n";
 		});
 		return output[0];
 	}
@@ -41,12 +53,28 @@ public class TaskController {
 		String output = "Task ID: " + task.getId()
 					+ ", Task Name: " + task.getName()
 					+ ", Task Description: " + task.getDescription()
-					+ ", Task Status: " + task.getStatus() + "\n";
+					+ ", Task Status: " + task.getStatus();
+		if (!task.isRoot()) {
+			output += ", Parent Task ID: " + task.getParentId();				
+		} else {
+			output += ", Task is root";
+		}
+		output += "\n";
 		return output;
+	}
+	
+	private int checkTaskTreeDepth(Task task) {
+		int c = 1;
+		while (!task.isRoot() && task != null) {
+			task = taskRepository.findById(task.getParentId()).orElse(null);
+			c++;
+		}
+		return c;
 	}
 	
 	@GetMapping("/allTasks")
 	public ResponseEntity<String> getAllTasks() {
+		System.out.println(allowedTreeLevel);
 		return ResponseEntity.ok(printAllTasks());
 	}
 	
@@ -83,7 +111,7 @@ public class TaskController {
 		} else if (newTaskName == null || newTaskName.equals("")) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Empty task name provided");
 		}
-		Task updatedTask = new Task(oldTask.getId(), newTaskName, oldTask.getDescription(), oldTask.getStatus());
+		Task updatedTask = new Task(oldTask.getId(), newTaskName, oldTask.getDescription(), oldTask.getStatus(), oldTask.getAssignedEmployees());
 		taskRepository.save(updatedTask);
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
@@ -96,7 +124,7 @@ public class TaskController {
 		} else if (newTaskDesc == null || newTaskDesc.equals("")) {
 			return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("Empty task description provided");
 		}
-		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), newTaskDesc, oldTask.getStatus());
+		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), newTaskDesc, oldTask.getStatus(), oldTask.getAssignedEmployees());
 		taskRepository.save(updatedTask);
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
@@ -124,9 +152,25 @@ public class TaskController {
 		default:
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Given Value: " + newStatusValue + " does not match any of the acceptable values: (NEW, IN_PROGRESS, POSTPONED, DONE)");
 		}
-		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), oldTask.getDescription(), newStatus);
+		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), oldTask.getDescription(), newStatus, oldTask.getAssignedEmployees());
 		taskRepository.save(updatedTask);
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
-}
 	
+	@PutMapping("/subTasks")
+	public ResponseEntity<String> addSubTask(@RequestParam("parentId") Integer parentId, @RequestParam("taskName") String subTaskName, @RequestParam("taskDesc") String subTaskDesc) {
+		Task task = taskRepository.findById(parentId).orElse(null);
+		if (task == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No task found for id: " + parentId);
+		}
+		int treeLevelCounter = checkTaskTreeDepth(task);
+		if (treeLevelCounter == allowedTreeLevel) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tree depth exceeded allowed number. Trying to add at level: " + treeLevelCounter + ". Allowed level: " + allowedTreeLevel);
+		}
+		Task subTask = new Task(subTaskName, subTaskDesc);
+		task.addSubTask(subTask);
+		taskRepository.save(task);
+		taskRepository.save(subTask);
+		return ResponseEntity.ok(printOneTask(subTask));
+	}
+}
