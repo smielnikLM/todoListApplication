@@ -44,7 +44,7 @@ public class TaskController {
 			} else {
 				output[0] += ", Task is root";
 			}
-			output[0] += "\n";
+			output[0] += ", Project ID: " + task.getProjectId() + "\n";
 		});
 		return output[0];
 	}
@@ -59,17 +59,17 @@ public class TaskController {
 		} else {
 			output += ", Task is root";
 		}
-		output += "\n";
+		output += ", Project ID: " + task.getProjectId() + "\n";
 		return output;
 	}
 	
 	private int checkTaskTreeDepth(Task task) {
-		int c = 1;
+		int treeDepth = 1;
 		while (!task.isRoot() && task != null) {
 			task = taskRepository.findById(task.getParentId()).orElse(null);
-			c++;
+			treeDepth++;
 		}
-		return c;
+		return treeDepth;
 	}
 	
 	@GetMapping("/allTasks")
@@ -88,13 +88,11 @@ public class TaskController {
 		
 	}
 	
-	@PostMapping("")
-	public ResponseEntity addTask(@RequestBody Task task) {
-		if (task == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not valid task provided, please provide valid json object. Provided Task: " + task);
-		}
-		task.setStatus(StatusValues.NEW);
-		return ResponseEntity.ok().body(taskRepository.save(task));
+	@PutMapping("")
+	public ResponseEntity<String> addTask(@RequestParam("name") String taskName, @RequestParam("desc") String taskDesc, @RequestParam("projectId") Integer projectId) {
+		Task task = new Task(taskName, taskDesc, projectId);
+		taskRepository.save(task);
+		return ResponseEntity.ok(printAllTasks());
 	}
 	
 	@DeleteMapping("")
@@ -106,12 +104,12 @@ public class TaskController {
 	@PutMapping("/editName")
 	public ResponseEntity<String> editTaskName(@RequestParam("id") Integer id, @RequestParam("name") String newTaskName) {
 		Task oldTask = taskRepository.findById(id).orElse(null);
-		if (oldTask == null || newTaskName == null || newTaskName.equals("")) {
+		if (oldTask == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No task found for id: " + id);	
 		} else if (newTaskName == null || newTaskName.equals("")) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Empty task name provided");
 		}
-		Task updatedTask = new Task(oldTask.getId(), newTaskName, oldTask.getDescription(), oldTask.getStatus(), oldTask.getAssignedEmployees());
+		Task updatedTask = new Task(oldTask.getId(), newTaskName, oldTask.getDescription(), oldTask.getStatus(), oldTask.getAssignedEmployees(), oldTask.getProjectId());
 		taskRepository.save(updatedTask);
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
@@ -119,12 +117,12 @@ public class TaskController {
 	@PutMapping("/editDesc")
 	public ResponseEntity<String> editTaskDesc(@RequestParam("id") Integer id, @RequestParam("description") String newTaskDesc) {
 		Task oldTask = taskRepository.findById(id).orElse(null);
-		if (oldTask == null || newTaskDesc == null || newTaskDesc.equals("")) {
+		if (oldTask == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No task found for id: " + id);	
 		} else if (newTaskDesc == null || newTaskDesc.equals("")) {
 			return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("Empty task description provided");
 		}
-		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), newTaskDesc, oldTask.getStatus(), oldTask.getAssignedEmployees());
+		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), newTaskDesc, oldTask.getStatus(), oldTask.getAssignedEmployees(), oldTask.getProjectId());
 		taskRepository.save(updatedTask);
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
@@ -152,7 +150,7 @@ public class TaskController {
 		default:
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Given Value: " + newStatusValue + " does not match any of the acceptable values: (NEW, IN_PROGRESS, POSTPONED, DONE)");
 		}
-		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), oldTask.getDescription(), newStatus, oldTask.getAssignedEmployees());
+		Task updatedTask = new Task(oldTask.getId(), oldTask.getName(), oldTask.getDescription(), newStatus, oldTask.getAssignedEmployees(), oldTask.getProjectId());
 		taskRepository.save(updatedTask);
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
@@ -167,7 +165,7 @@ public class TaskController {
 		if (treeLevelCounter == allowedTreeLevel) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Tree depth exceeded allowed number. Trying to add at level: " + treeLevelCounter + ". Allowed level: " + allowedTreeLevel);
 		}
-		Task subTask = new Task(subTaskName, subTaskDesc);
+		Task subTask = new Task(subTaskName, subTaskDesc, task.getProjectId());
 		task.addSubTask(subTask);
 		taskRepository.save(task);
 		taskRepository.save(subTask);

@@ -15,7 +15,7 @@ import com.example.demo.task.Task;
 import com.example.demo.task.TaskRepository;
 
 @RestController
-@RequestMapping("/relations")
+@RequestMapping("/taskRelation")
 public class EmployeeTaskRelationController {
 	private final EmployeeRepository employeeRepository;
 	
@@ -59,7 +59,17 @@ public class EmployeeTaskRelationController {
 	}
 	
 	private boolean checkForRelation(Task task, Employee employee) {
-		return (task.checkAssignment(employee) && employee.checkAssignment(task));
+		return (task.checkAssignment(employee) && employee.checkTaskAssignment(task));
+	}
+	
+	private boolean checkForProject(Task task, Employee employee) {
+		boolean[] returnValue = {false};
+		employee.getAssignedProjects().forEach(project -> {
+			if (project.getId() == task.getProjectId()) {
+				returnValue[0] = true;
+			}
+		});
+		return returnValue[0];
 	}
 	
 	@GetMapping("/allRelations")
@@ -87,6 +97,10 @@ public class EmployeeTaskRelationController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Employee not found for id: " + employeeId);
 		}
 		
+		if (!checkForProject(task, employee)) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User is not in the same project as task");
+		}
+		
 		if (checkForRelation(task, employee)) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Relation for taskId: " + taskId + " and employeeId: " + employeeId + " already exists");
 		}
@@ -97,7 +111,7 @@ public class EmployeeTaskRelationController {
 		taskRepository.save(task);
 		employeeRepository.save(employee);
 		
-		return ResponseEntity.ok(printAllRelations());
+		return ResponseEntity.ok(printOneRelation(task));
 	}
 	
 	@DeleteMapping("")
@@ -116,7 +130,7 @@ public class EmployeeTaskRelationController {
 		}
 
 		task.removeAssignment(employee);
-		employee.removeAssignment(task);
+		employee.removeTaskAssignment(task);
 		
 		taskRepository.save(task);
 		employeeRepository.save(employee);
