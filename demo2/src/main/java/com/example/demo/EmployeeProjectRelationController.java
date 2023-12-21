@@ -76,7 +76,7 @@ public class EmployeeProjectRelationController {
 		return ResponseEntity.ok(printOneRelation(project));
 	}
 	
-	@PutMapping("")
+	@PutMapping("/add")
 	public ResponseEntity<String> addRelation(@RequestParam("projectId") Integer projectId, @RequestParam("employeeId") Integer employeeId) {
 		Project project = projectRepository.findById(projectId).orElse(null);
 		Employee employee = employeeRepository.findById(employeeId).orElse(null);
@@ -100,7 +100,7 @@ public class EmployeeProjectRelationController {
 		return ResponseEntity.ok(printAllRelations());
 	}
 	
-	@DeleteMapping("")
+	@DeleteMapping("/delete")
 	public ResponseEntity<String> deleteRelation(@RequestParam("projectId") Integer projectId, @RequestParam("employeeId") Integer employeeId) {
 		Project project = projectRepository.findById(projectId).orElse(null);
 		Employee employee = employeeRepository.findById(employeeId).orElse(null);

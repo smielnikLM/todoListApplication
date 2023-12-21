@@ -86,7 +86,7 @@ public class EmployeeTaskRelationController {
 		return ResponseEntity.ok(printOneRelation(task));
 	}
 	
-	@PutMapping("")
+	@PutMapping("/add")
 	public ResponseEntity<String> addRelation(@RequestParam("taskId") Integer taskId, @RequestParam("employeeId") Integer employeeId) {
 		Task task = taskRepository.findById(taskId).orElse(null);
 		Employee employee = employeeRepository.findById(employeeId).orElse(null);
@@ -114,7 +114,7 @@ public class EmployeeTaskRelationController {
 		return ResponseEntity.ok(printOneRelation(task));
 	}
 	
-	@DeleteMapping("")
+	@DeleteMapping("/delete")
 	public ResponseEntity<String> deleteRelation(@RequestParam("taskId") Integer taskId, @RequestParam("employeeId") Integer employeeId) {
 		Task task = taskRepository.findById(taskId).orElse(null);
 		Employee employee = employeeRepository.findById(employeeId).orElse(null);

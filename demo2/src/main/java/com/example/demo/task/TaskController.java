@@ -8,8 +8,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,7 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.employee.Employee;
 import com.example.demo.employee.EmployeeRepository;
 
-@RestController
+import jakarta.validation.Valid;
+
+@Controller
 @RequestMapping("/tasks")
 public class TaskController {
 	private final TaskRepository taskRepository;
@@ -72,12 +78,18 @@ public class TaskController {
 		return treeDepth;
 	}
 	
-	@GetMapping("/allTasks")
-	public ResponseEntity<String> getAllTasks() {
-		System.out.println(allowedTreeLevel);
-		return ResponseEntity.ok(printAllTasks());
+	@GetMapping("")
+	public String showAllTasks(Model model) {
+		model.addAttribute("tasks", taskRepository.findAll());
+		return "all-tasks";
 	}
 	
+	@GetMapping("/allTasks")
+	public ResponseEntity<String> getAllTasks() {
+		return ResponseEntity.ok(printAllTasks());
+		
+	}
+		
 	@GetMapping("/oneTask")
 	public ResponseEntity<String> getOneTask(@RequestParam("id") Integer id) {
 		Task task = taskRepository.findById(id).orElse(null);
@@ -88,20 +100,20 @@ public class TaskController {
 		
 	}
 	
-	@PutMapping("")
+	@PutMapping("/add")
 	public ResponseEntity<String> addTask(@RequestParam("name") String taskName, @RequestParam("desc") String taskDesc, @RequestParam("projectId") Integer projectId) {
 		Task task = new Task(taskName, taskDesc, projectId);
 		taskRepository.save(task);
-		return ResponseEntity.ok(printAllTasks());
+		return ResponseEntity.ok(printOneTask(task));
 	}
 	
-	@DeleteMapping("")
+	@DeleteMapping("/delete")
 	public ResponseEntity<String> deleteTask(@RequestParam("id") Integer id) {
 		taskRepository.deleteById(id);
 		return ResponseEntity.ok(printAllTasks());
 	}
 	
-	@PutMapping("/editName")
+	@PutMapping("/edit/name")
 	public ResponseEntity<String> editTaskName(@RequestParam("id") Integer id, @RequestParam("name") String newTaskName) {
 		Task oldTask = taskRepository.findById(id).orElse(null);
 		if (oldTask == null) {
@@ -114,7 +126,7 @@ public class TaskController {
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
 	
-	@PutMapping("/editDesc")
+	@PutMapping("/edit/desc")
 	public ResponseEntity<String> editTaskDesc(@RequestParam("id") Integer id, @RequestParam("description") String newTaskDesc) {
 		Task oldTask = taskRepository.findById(id).orElse(null);
 		if (oldTask == null) {
@@ -127,7 +139,7 @@ public class TaskController {
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
 	
-	@PutMapping("/editStatus")
+	@PutMapping("/edit/status")
 	public ResponseEntity<String> changeStatus(@RequestParam("id") Integer id, @RequestParam("status") String newStatusValue) {
 		Task oldTask = taskRepository.findById(id).orElse(null);
 		if (oldTask == null) {
@@ -155,8 +167,8 @@ public class TaskController {
 		return ResponseEntity.ok(printOneTask(updatedTask));
 	}
 	
-	@PutMapping("/subTasks")
-	public ResponseEntity<String> addSubTask(@RequestParam("parentId") Integer parentId, @RequestParam("taskName") String subTaskName, @RequestParam("taskDesc") String subTaskDesc) {
+	@PutMapping("add/subTask")
+	public ResponseEntity<String> addSubTask(@RequestParam("parentId") Integer parentId, @RequestParam("name") String subTaskName, @RequestParam("desc") String subTaskDesc) {
 		Task task = taskRepository.findById(parentId).orElse(null);
 		if (task == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No task found for id: " + parentId);

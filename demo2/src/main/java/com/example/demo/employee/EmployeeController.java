@@ -51,21 +51,22 @@ public class EmployeeController {
 		return ResponseEntity.ok(printOneEmployee(employee));
 	}
 	
-	@PostMapping("")
-	public ResponseEntity addEmployee(@RequestBody Employee employee) {
+	@PostMapping("/add")
+	public ResponseEntity<String> addEmployee(@RequestBody Employee employee) {
 		if (employee == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not valid employee provided, please provide valid json object. Provided Employee: " + employee);
 		}
-		return ResponseEntity.ok().body(employeeRepository.save(employee));
+		employeeRepository.save(employee);
+		return ResponseEntity.ok(printOneEmployee(employee));
 	}
 	
-	@DeleteMapping("")
+	@DeleteMapping("/delete")
 	public ResponseEntity<String> deleteEmployee(@RequestParam("id") Integer id) {
 		employeeRepository.deleteById(id);
 		return ResponseEntity.ok(printAllEmployees());
 	}
 	
-	@PutMapping("/edit")
+	@PutMapping("/edit/name")
 	public ResponseEntity<String> editEmployeeName(@RequestParam("id") Integer id, @RequestParam("name") String newName) {
 		Employee oldEmployee = employeeRepository.findById(id).orElse(null);
 		if (oldEmployee == null) {

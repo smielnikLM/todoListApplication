@@ -23,7 +23,7 @@ public class ProjectController {
 	private String printAllProjects() {
 		String[] output = {""};
 		projectRepository.findAll().forEach(project -> {
-			output[0] = "Project ID: " + project.getId()
+			output[0] += "Project ID: " + project.getId()
 					+ ", Project name: " + project.getName()
 					+ ", Project description: " + project.getDescription() + "\n";
 		});
@@ -51,20 +51,20 @@ public class ProjectController {
 		return ResponseEntity.ok(printOneProject(project));
 	}
 	
-	@PutMapping("")
+	@PutMapping("/add")
 	public ResponseEntity<String> addProject(@RequestParam("name") String name, @RequestParam("desc") String desc) {
 		Project project = new Project(name, desc);
 		projectRepository.save(project);
 		return ResponseEntity.ok(printOneProject(project));
 	}
 	
-	@DeleteMapping("")
+	@DeleteMapping("/delete")
 	public ResponseEntity<String> deleteProject(@RequestParam("id") Integer id) {
 		projectRepository.deleteById(id);
 		return ResponseEntity.ok(printAllProjects());
 	}
 	
-	@PutMapping("/editName")
+	@PutMapping("/edit/name")
 	public ResponseEntity<String> editProjectName(@RequestParam("id") Integer id, @RequestParam("name") String newProjectName) {
 		Project oldProject = projectRepository.findById(id).orElse(null);
 		if (oldProject == null) {
@@ -77,7 +77,7 @@ public class ProjectController {
 		return ResponseEntity.ok(printOneProject(updatedProject));
 	}
 	
-	@PutMapping("/editDesc")
+	@PutMapping("/edit/desc")
 	public ResponseEntity<String> editProjectDesc(@RequestParam("id") Integer id, @RequestParam("desc") String newProjectDesc) {
 		Project oldProject = projectRepository.findById(id).orElse(null);
 		if (oldProject == null) {
